@@ -8,3 +8,5 @@ report.json
 .env
 .env.*
 !.env.example
+/local-workflows/
+/local-reports/

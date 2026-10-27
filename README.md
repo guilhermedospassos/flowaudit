@@ -15,25 +15,46 @@ A análise funciona localmente. Não executa workflows ou expressões, não aces
 
 ## Instalação e uso
 
-Requer Node.js 22.12 ou superior e npm. O ambiente principal de desenvolvimento é Windows com Node.js 24. A ferramenta ainda não foi publicada no npm.
+Requer Node.js 22.12 ou superior e npm. Funciona como CLI; não exige uma instalação do n8n. O ambiente principal de desenvolvimento é Windows com Node.js 24. A ferramenta ainda não foi publicada no registro npm.
 
-```powershell
-cd C:\Users\Guilherme\Documents\flowaudit
+Baixe o ZIP ou clone este repositório, extraia os arquivos e abra um terminal na pasta `flowaudit`. Execute:
+
+```sh
+git clone https://github.com/guilhermedospassos/flowaudit.git
+cd flowaudit
+```
+
+Se baixou o ZIP, abra o terminal na pasta extraída. Instale e execute:
+
+```sh
 npm ci
-npm run analyze -- examples/basic-workflow.json
-npm run analyze -- examples/workflow-with-findings.json
-npm run analyze -- examples/basic-workflow.json --format json
-npm run analyze -- examples/basic-workflow.json --format json --output report.json
-npm run analyze -- --help
+npm start -- examples/basic-workflow.json
 ```
 
-O `package-lock.json` fixa as versões para instalação reproduzível com `npm ci`. Caminhos com espaços devem estar entre aspas. URLs não são baixadas: o argumento representa um arquivo local.
+`npm ci` instala as versões do lockfile e compila a CLI automaticamente. O primeiro exemplo deve mostrar **2 nós e nenhum achado**. Para analisar um export seu:
 
-```powershell
-npm run build
-node dist/cli.js "C:\workflows\Meu fluxo.json" --format json
-node dist/cli.js --version
+```sh
+npm start -- "caminho/Meu workflow.json"
+npm start -- "caminho/Meu workflow.json" --format json
+npm start -- "caminho/Meu workflow.json" --format json --output report.json
+npm start -- --help
+npm start -- --version
 ```
+
+Caminhos com espaços devem estar entre aspas. URLs não são baixadas: o argumento representa um arquivo local. A análise não precisa de rede após a instalação.
+
+Para usar o código durante o desenvolvimento, `npm run analyze -- arquivo.json` executa TypeScript por tsx. Depois de alterações no código, execute `npm run build` para atualizar a versão usada por `npm start`.
+
+### Usar um pacote de distribuição
+
+Se você recebeu um arquivo `flowaudit-0.1.0.tgz`, pode instalar somente a CLI e sua dependência de execução:
+
+```sh
+npm install --global ./flowaudit-0.1.0.tgz
+flowaudit "caminho/Meu workflow.json" --format json
+```
+
+O pacote contém o JavaScript compilado; não exige TypeScript ou Vitest na máquina de quem o utiliza. A instalação pode consultar o npm para obter o Zod. Não use `npx flowaudit` como se esta versão já estivesse disponível no registro npm.
 
 `--format` aceita `terminal` (padrão) ou `json`. `--output` salva o mesmo relatório enviado a stdout, em UTF-8. A pasta de destino precisa existir e o arquivo deve ser novo. Tentativas de substituir a entrada, arquivos existentes ou seus aliases são recusadas. Para caminhos iniciados com hífen, coloque as opções antes de `--` e o caminho depois dele.
 
@@ -107,6 +128,25 @@ A FA004 aceita `stopWorkflow` explícito como uma estratégia intencional. Retry
 
 ## Formato aceito e limites
 
+### Testar exports locais antes de publicar
+
+Copie seus exports JSON para `local-workflows/`. Salve os relatórios em `local-reports/`. As duas pastas são ignoradas pelo Git e não fazem parte do pacote npm. Não use dados reais em `examples/` ou `tests/fixtures/`.
+
+Consulte o registro das verificações e pendências em [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
+
+```powershell
+npm run analyze -- "local-workflows/meu-workflow.json"
+npm run analyze -- "local-workflows/meu-workflow.json" --format json --output "local-reports/meu-workflow-report.json"
+```
+
+As pastas locais precisam ser criadas em novos checkouts, pois seus conteúdos não são versionados:
+
+```powershell
+New-Item -ItemType Directory -Path local-workflows,local-reports -Force
+```
+
+### Entrada e interpretação
+
 - Um objeto JSON representando **um** workflow; arrays de exports em lote e pacotes `.n8np` ficam fora do MVP.
 - UTF-8, com ou sem BOM, até **10 MiB (10.485.760 bytes)**. Leitura limitada mesmo se o arquivo crescer durante a análise.
 - Profundidade máxima de 100 níveis para evitar estruturas abusivas.
@@ -137,7 +177,9 @@ npm run build
 
 Os testes cobrem parser, regras positivas e negativas, falsos positivos, IA, estratégias HTTP, relatórios, sanitização e CLI com leitura/escrita em diretórios temporários. A cobertura gera `coverage/index.html` e `coverage/lcov.info`; os limites configurados são 85% de linhas/funções/statements e 80% de branches.
 
-O GitHub Actions está configurado para push e pull request em Windows e Linux, com Node.js 22 e 24: `npm ci`, typecheck, testes com cobertura e build. Permissão do token limitada a `contents: read`. Não há publicação automática.
+O GitHub Actions está configurado para push e pull request em Windows e Linux, com Node.js 22 e 24: `npm ci`, typecheck, testes com cobertura, build e `npm audit --audit-level=high`. As actions oficiais são fixadas por SHA e a permissão do token é limitada a `contents: read`. Não há publicação automática.
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md) para contribuir, [SECURITY.md](SECURITY.md) para relatar vulnerabilidades e [CHANGELOG.md](CHANGELOG.md) para o histórico da versão.
 
 ## Arquitetura
 

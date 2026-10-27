@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "description": "Analisador estático local de workflows n8n",
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/guilhermedospassos/flowaudit.git" },
+  "homepage": "https://github.com/guilhermedospassos/flowaudit#readme",
+  "bugs": { "url": "https://github.com/guilhermedospassos/flowaudit/issues" },
+  "keywords": ["n8n", "workflow", "static-analysis", "cli", "security"],
   "type": "module",
   "bin": { "flowaudit": "dist/cli.js" },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": ["dist", "README.md", "LICENSE", "CHANGELOG.md", "SECURITY.md"],
   "engines": { "node": ">=22.12.0" },
   "dependencies": { "zod": "^4.6.7" },
   "devDependencies": {
@@ -16,6 +20,8 @@
     "vitest": "^4.0.0"
   },
   "scripts": {
+    "prepare": "npm run build",
+    "start": "node dist/cli.js",
     "analyze": "tsx src/cli.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

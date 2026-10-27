@@ -28,18 +28,14 @@ export function findSecrets(parameters: Record<string, unknown>): SecretMatch[] 
     if (depth > 100) continue;
     if (typeof value === 'string') {
       const text = value.trim();
-      const bearer = /\b(?:Bearer|Basic)\s+(\{\{[\s\S]*?\}\}|[^\s"'<>;,]+)/iu.exec(text);
-      const knownToken = /\b(?:sk-[a-zA-Z0-9_-]{16,}|gh[pousr]_[a-zA-Z0-9]{20,}|AKIA[A-Z0-9]{16})\b/u.exec(text);
-      const urlSecret = /[?&](?:api[_-]?key|token|access_token|password|secret)=(\{\{[\s\S]*?\}\}|[^&#\s]+)/iu.exec(text);
-      const userInfo = /:\/\/[^\s/:@]+:([^\s/@]+)@/u.exec(text);
-      if ((sensitiveKey(key) && literal(text))
-        || (bearer && literal(bearer[1]!)) || knownToken
-        || (urlSecret && literal(urlSecret[1]!)) || (userInfo && literal(userInfo[1]!))) {
-        const values = [value];
-        for (const part of [bearer?.[1], knownToken?.[0], urlSecret?.[1], userInfo?.[1]]) {
-          if (part && literal(part)) values.push(part);
-        }
-        matches.push({ location: path, values });
+      const candidates = [
+        ...Array.from(text.matchAll(/\b(?:Bearer|Basic)\s+(\{\{[\s\S]*?\}\}|[^\s"'<>;,]+)/giu), (match) => match[1]!),
+        ...Array.from(text.matchAll(/\b(?:sk-[a-zA-Z0-9_-]{16,}|gh[pousr]_[a-zA-Z0-9]{20,}|AKIA[A-Z0-9]{16})\b/gu), (match) => match[0]),
+        ...Array.from(text.matchAll(/[?&](?:api[_-]?key|token|access_token|password|secret)=(\{\{[\s\S]*?\}\}|[^&#\s]+)/giu), (match) => match[1]!),
+        ...Array.from(text.matchAll(/:\/\/[^\s/:@]+:([^\s/@]+)@/gu), (match) => match[1]!),
+      ].filter(literal);
+      if ((sensitiveKey(key) && literal(text)) || candidates.length > 0) {
+        matches.push({ location: path, values: [value, text, ...candidates] });
       }
       if (text.startsWith('{') || text.startsWith('[')) {
         try {

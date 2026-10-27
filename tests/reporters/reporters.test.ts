@@ -50,6 +50,48 @@ describe('reports and engine', () => {
       expect(finding.location ?? '').not.toContain(JSON.stringify(secret).slice(1, -1));
     }
   });
+  it('redacts every detected token in a parameter when repeated in metadata', () => {
+    const first = 'fictional-first-sensitive-token';
+    const second = 'fictional-second-sensitive-token';
+    const parsed = workflow([node(second, { parameters: { note: `Bearer ${first}; Bearer ${second}` } })]);
+    parsed.name = second;
+    const report = analyzeWorkflow(parsed);
+    for (const output of [jsonReporter(report), terminalReporter(report)]) {
+      expect(output).not.toContain(first);
+      expect(output).not.toContain(second);
+    }
+  });
+  it.each([
+    { value: 'sk-fictionalFIRST0123456789 sk-fictionalSECOND0123456789', second: 'sk-fictionalSECOND0123456789' },
+    { value: 'https://example.invalid/?token=fictional-first&token=fictional-second', second: 'fictional-second' },
+    { value: 'https://user:fictional-first@example.invalid/ https://user:fictional-second@example.invalid/', second: 'fictional-second' },
+  ])('redacts repeated token patterns from metadata %#', ({ value, second }) => {
+    const report = analyzeWorkflow(workflow([node(second, { parameters: { note: value } })]));
+    expect(jsonReporter(report)).not.toContain(second);
+    expect(terminalReporter(report)).not.toContain(second);
+  });
+  it('does not reveal a secret after removing terminal escape sequences', () => {
+    const secret = 'fictional-sensitive-token';
+    const parsed = workflow([node('fictional-\u001b[31msensitive-token', { parameters: { password: secret } })]);
+    const report = analyzeWorkflow(parsed);
+    for (const output of [jsonReporter(report), terminalReporter(report)]) {
+      expect(output).not.toContain(secret);
+      expect(output).not.toContain('\u001b');
+    }
+  });
+  it('redacts the cleaned form of a secret containing terminal escapes', () => {
+    const secret = 'fictional-\u001b[31msensitive-token';
+    const report = analyzeWorkflow(workflow([node('fictional-sensitive-token', { parameters: { password: secret } })]));
+    for (const output of [jsonReporter(report), terminalReporter(report)]) {
+      expect(output).not.toContain('fictional-sensitive-token');
+    }
+  });
+  it('redacts a trimmed secret when its parameter contains surrounding whitespace', () => {
+    const secret = 'fictional-padded-sensitive-value';
+    const report = analyzeWorkflow(workflow([node(secret, { parameters: { apiKey: ` \t${secret}\r\n` } })]));
+    expect(jsonReporter(report)).not.toContain(secret);
+    expect(terminalReporter(report)).not.toContain(secret);
+  });
   it('renders counts, recommendations, missing name and an empty result', () => {
     const output = terminalReporter(analyzeWorkflow(workflow([])));
     expect(output).toContain('Workflow: (sem nome)');

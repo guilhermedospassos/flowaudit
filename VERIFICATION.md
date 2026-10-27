@@ -8,22 +8,25 @@ Ambiente: Windows, Node.js 24.22.0, npm 11.19.1 e Git 2.56.0.
 | --- | --- |
 | `npm ci --offline --logs-dir .tmp/npm-logs --no-audit --no-fund --loglevel=error` | Instalação limpa concluída: 70 pacotes recuperados do cache npm. |
 | `npm run typecheck` | Passou, incluindo código-fonte, testes e configuração do Vitest. |
-| `npm test` | 125 testes passaram em 6 arquivos. |
-| `npm run test:coverage` | 125 testes passaram; limites globais de cobertura atendidos. |
+| `npm test` | 133 testes passaram em 7 arquivos após a revisão de segurança e distribuição. |
+| `npm run test:coverage` | 133 testes passaram; limites globais de cobertura atendidos. |
 | `npm run build` | Passou; CLI JavaScript e declarações geradas em `dist/`. |
 | `node dist/cli.js examples/basic-workflow.json` | 2 nós, nenhum achado e código 0. |
 | `node dist/cli.js examples/workflow-with-findings.json --format json --output .tmp/final-report.json` | 5 achados; arquivo JSON exportado e valores sensíveis omitidos. |
+| `npm start -- examples/basic-workflow.json` | 2 nós, nenhum achado; usa o build automático feito por `npm ci`. |
+| Instalação do pacote `.tgz` em pasta separada | Executável instalado funcional, com apenas FlowAudit e Zod; exports privados analisados sem erros ou alterações nos originais. |
+| `npm audit --json` no PowerShell externo | Resultado lido localmente: zero vulnerabilidades conhecidas reportadas. |
 
 Cobertura V8 medida após a instalação limpa:
 
 | Métrica | Cobertura |
 | --- | --- |
-| Statements | 96,44% |
-| Branches | 93,35% |
-| Functions | 95,83% |
-| Lines | 97,86% |
+| Statements | 96,45% |
+| Branches | 93,10% |
+| Functions | 96,36% |
+| Lines | 97,87% |
 
-O teste de integração compila a CLI em uma pasta temporária dentro do projeto e executa o JavaScript emitido. Ele verifica que stdout contém apenas JSON e stderr permanece vazio. Os demais testes exercitam as funções da CLI, leitura/escrita, parser, regras, falsos positivos, conexões de IA e sanitização.
+O teste de integração compila a CLI em uma pasta temporária dentro do projeto e executa o JavaScript emitido. Ele verifica que stdout contém apenas JSON e stderr permanece vazio. Outro teste cria marcadores sintéticos privados e verifica sua exclusão do pacote npm. Os demais testes exercitam as funções da CLI, leitura/escrita, parser, regras, falsos positivos, conexões de IA e sanitização.
 
 ## Correções verificadas
 
@@ -33,12 +36,12 @@ O teste de integração compila a CLI em uma pasta temporária dentro do projeto
 
 ## Limites desta verificação
 
-A instalação inicial foi feita pelo usuário em um PowerShell externo. O terminal gerenciado desta sessão não tem acesso ao registro npm; a reinstalação local foi validada offline, sem auditoria de vulnerabilidades pela rede.
+A instalação inicial e a auditoria npm foram feitas pelo usuário em um PowerShell externo. O terminal gerenciado desta sessão não tem acesso ao registro npm; a reinstalação local foi validada offline. Para o teste de instalação do pacote de distribuição, o arquivo original do Zod em cache foi fornecido explicitamente junto ao `.tgz`.
 
-Neste terminal, `npm run analyze -- examples/basic-workflow.json` encontra uma restrição do tsx ao consultar o usuário do Windows: `uv_os_get_passwd` retorna `ENOMEM`. Essa falha ocorre na inicialização da ferramenta de desenvolvimento, antes do código FlowAudit. A CLI compilada funciona e foi testada neste mesmo terminal. O teste anterior de execução direta por tsx passou no PowerShell externo, conforme a saída enviada pelo usuário; o comando npm de desenvolvimento ainda precisa de confirmação nesse ambiente externo.
+Neste terminal, `npm run analyze -- examples/basic-workflow.json` encontra uma restrição do tsx ao consultar o usuário do Windows: `uv_os_get_passwd` retorna `ENOMEM`. Essa falha ocorre na inicialização da ferramenta de desenvolvimento, antes do código FlowAudit. A CLI compilada funciona e foi testada neste mesmo terminal. O usuário confirmou a execução bem-sucedida do comando npm de desenvolvimento no PowerShell externo: 2 nós, nenhum achado e relatório esperado.
 
-O GitHub Actions foi configurado para Windows/Linux e Node.js 22/24. O pipeline remoto, Linux e Node.js 22 não foram executados nesta sessão. Nenhum repositório remoto foi criado e nenhum push foi executado.
+O GitHub Actions foi configurado para Windows/Linux e Node.js 22/24. As verificações locais foram executadas em Windows com Node.js 24; o estado da matriz remota deve ser consultado na [página de Actions](https://github.com/guilhermedospassos/flowaudit/actions). Não confunda a matriz configurada com compatibilidade já confirmada por execução.
 
 ## Versionamento local
 
-Git foi inicializado na branch `main`. A tentativa de adicionar apenas os arquivos do projeto foi recusada pelo ambiente gerenciado ao criar `.git/index.lock` (`Permission denied`); não há commit nem arquivos adicionados ao índice. A exceção de propriedade usada na tentativa foi limitada ao comando Git, sem alterar configuração global. O commit precisa ser criado no PowerShell externo, que possui acesso de escrita à pasta `.git`.
+Git foi inicializado na branch `main`. O usuário criou o commit local `6f4e693` (`feat: implement FlowAudit MVP`) no PowerShell externo e o repositório público [guilhermedospassos/flowaudit](https://github.com/guilhermedospassos/flowaudit). As alterações posteriores de segurança e distribuição estão documentadas em [SECURITY_REVIEW.md](SECURITY_REVIEW.md). Como o terminal gerenciado não pode escrever em `.git/index.lock`, o versionamento e o push são feitos pelo usuário no PowerShell externo.

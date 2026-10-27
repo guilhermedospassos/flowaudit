@@ -1,6 +1,7 @@
 # FlowAudit
 
 - Trabalhe somente neste projeto. Nunca use exports reais de clientes nos exemplos ou testes.
+- Exports locais do usuário ficam em `local-workflows/`; relatórios privados em `local-reports/`. Ambas são ignoradas pelo Git. Analise esses arquivos localmente, sem imprimir seu conteúdo bruto, copiar dados para fixtures ou enviá-los a serviços externos.
 - CLI local em TypeScript strict/ESM, Node.js 22.12+. Não acrescente rede, telemetria, execução de expressões, UI ou instâncias n8n ao MVP.
 - `parse-workflow.ts` valida com Zod, limita bytes/profundidade e normaliza conexões. Falhas recuperáveis alimentam FA005; entrada ambígua é rejeitada.
 - Regras independentes em `src/core/rules`, registradas em `analyze-workflow.ts`. Relatórios consomem o resultado já sanitizado do motor.
