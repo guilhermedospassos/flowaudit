@@ -1,0 +1,16 @@
+{
+  "name": "Exemplo com pontos de revisão",
+  "nodes": [
+    { "id": "start", "name": "Início", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [0, 0], "parameters": {} },
+    { "id": "http", "name": "Consultar API", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [240, 0], "parameters": {
+      "url": "https://example.invalid/data", "sendHeaders": true,
+      "headerParameters": { "parameters": [{ "name": "Authorization", "value": "Bearer flowaudit-fictional-demo-token" }] }
+    } },
+    { "id": "unused", "name": "Rascunho", "type": "n8n-nodes-base.set", "typeVersion": 3.4, "position": [240, 240], "disabled": true, "parameters": {} }
+  ],
+  "connections": {
+    "Início": { "main": [[{ "node": "Consultar API", "type": "main", "index": 0 }]] },
+    "Consultar API": { "main": [[{ "node": "Nó removido", "type": "main", "index": 0 }]] }
+  },
+  "settings": {}
+}

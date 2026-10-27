@@ -1,0 +1,16 @@
+{
+  "name": "IA sintética",
+  "nodes": [
+    { "id": "trigger", "name": "Chat", "type": "@n8n/n8n-nodes-langchain.chatTrigger", "parameters": {} },
+    { "id": "agent", "name": "Agent", "type": "@n8n/n8n-nodes-langchain.agent", "parameters": {} },
+    { "id": "model", "name": "Model", "type": "@n8n/n8n-nodes-langchain.lmChatOllama", "parameters": {} },
+    { "id": "memory", "name": "Memory", "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow", "parameters": {} },
+    { "id": "tool", "name": "Tool", "type": "@n8n/n8n-nodes-langchain.toolCalculator", "parameters": {} }
+  ],
+  "connections": {
+    "Chat": { "main": [[{ "node": "Agent", "type": "main", "index": 0 }]] },
+    "Model": { "ai_languageModel": [[{ "node": "Agent", "type": "ai_languageModel", "index": 0 }]] },
+    "Memory": { "ai_memory": [[{ "node": "Agent", "type": "ai_memory", "index": 0 }]] },
+    "Tool": { "ai_tool": [[{ "node": "Agent", "type": "ai_tool", "index": 0 }]] }
+  }
+}
